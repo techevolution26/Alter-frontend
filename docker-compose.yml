@@ -1,0 +1,12 @@
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      # If you run this alongside the alter-backend docker-compose project,
+      # put both on the same Docker network and point this at its service
+      # name (e.g. http://backend:8000/api/v1) instead.
+      API_BASE_URL: ${API_BASE_URL:-http://host.docker.internal:8000/api/v1}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

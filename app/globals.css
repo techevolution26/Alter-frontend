@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-linen text-ink antialiased;
+  }
+
+  /* Visible keyboard focus everywhere — never rely on the browser default
+     alone, but never remove it either. */
+  :focus-visible {
+    outline: 2px solid theme("colors.ember");
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background-color: theme("colors.ember");
+    color: theme("colors.ink");
+  }
+}
+
+@layer components {
+  .prayer-card {
+    @apply relative overflow-hidden rounded-card border border-vigil/10 bg-white/70 p-5 shadow-sm transition-shadow hover:shadow-md;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-full bg-ember px-5 py-2.5 font-body font-semibold text-ink transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-full border border-vigil/20 bg-transparent px-5 py-2.5 font-body font-medium text-vigil transition hover:bg-vigil/5 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .field-label {
+    @apply mb-1.5 block font-body text-sm font-medium text-ink/80;
+  }
+
+  .field-input {
+    @apply w-full rounded-lg border border-vigil/15 bg-white px-3.5 py-2.5 font-body text-ink placeholder:text-ink/35 focus:border-ember;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
