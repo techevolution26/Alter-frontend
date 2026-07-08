@@ -4,7 +4,14 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { apiFetch, loginRequest, ApiError } from "@/lib/api";
 import { setSessionToken, clearSessionToken } from "@/lib/session";
-import type { MpesaStkPushResponse, PrayerVisibility, RSVPStatus } from "@/lib/types";
+import type {
+  MpesaStkPushResponse,
+  PrayerStatus,
+  PrayerVisibility,
+  ReportStatus,
+  RSVPStatus,
+  TestimonyStatus,
+} from "@/lib/types";
 
 export interface ActionState {
   error?: string;
@@ -177,4 +184,96 @@ export async function initiateDonationAction(
   } catch (err) {
     return { error: errorMessage(err) };
   }
+}
+
+// --- Admin / staff (moderator, field_staff, admin roles) -------------------
+
+/**
+ * The backend takes `new_status` as a query param here (not a JSON body) —
+ * see app/api/v1/endpoints/prayers.py::review_prayer. Moderator/Admin only.
+ */
+export async function reviewPrayerAction(prayerId: string, newStatus: PrayerStatus): Promise<ActionState> {
+  try {
+    await apiFetch(`/prayers/${prayerId}/review?new_status=${encodeURIComponent(newStatus)}`, {
+      method: "PATCH",
+    });
+  } catch (err) {
+    return { error: errorMessage(err) };
+  }
+  revalidatePath("/admin/prayers");
+  revalidatePath("/"); // publishing here can put it straight onto the public wall
+  return { success: "Updated." };
+}
+
+/** Moderator, Admin, or Field Staff. */
+export async function reviewTestimonyAction(
+  testimonyId: string,
+  statusValue: TestimonyStatus,
+  notes?: string
+): Promise<ActionState> {
+  try {
+    await apiFetch(`/testimonies/${testimonyId}/review`, {
+      method: "PATCH",
+      body: { status: statusValue, notes: notes || null },
+    });
+  } catch (err) {
+    return { error: errorMessage(err) };
+  }
+  revalidatePath("/admin/testimonies");
+  revalidatePath("/testimonies");
+  return { success: "Updated." };
+}
+
+/** Moderator or Admin only. Route is /moderation-reports, not /moderation. */
+export async function resolveReportAction(
+  reportId: string,
+  statusValue: ReportStatus,
+  notes?: string
+): Promise<ActionState> {
+  try {
+    await apiFetch(`/moderation-reports/${reportId}/resolve`, {
+      method: "PATCH",
+      body: { status: statusValue, resolution_notes: notes || null },
+    });
+  } catch (err) {
+    return { error: errorMessage(err) };
+  }
+  revalidatePath("/admin/reports");
+  return { success: "Resolved." };
+}
+
+/** Field Staff or Admin only — Moderator cannot create events (matches the backend). */
+export async function createEventAction(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+  const title = String(formData.get("title") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const location = String(formData.get("location") ?? "").trim();
+  const organization_id = String(formData.get("organization_id") ?? "").trim();
+  const start_time = String(formData.get("start_time") ?? "");
+  const end_time = String(formData.get("end_time") ?? "");
+
+  if (!title || !organization_id || !start_time) {
+    return { error: "Title, organization, and a start time are required." };
+  }
+
+  try {
+    await apiFetch("/events", {
+      method: "POST",
+      body: {
+        title,
+        description: description || null,
+        location: location || null,
+        organization_id,
+        // datetime-local inputs have no timezone — treat as the server's
+        // local time by sending as-is; for a real pilot this should be
+        // adjusted to the org's actual timezone rather than assumed.
+        start_time: new Date(start_time).toISOString(),
+        end_time: end_time ? new Date(end_time).toISOString() : null,
+      },
+    });
+  } catch (err) {
+    return { error: errorMessage(err) };
+  }
+
+  revalidatePath("/events");
+  redirect("/events");
 }

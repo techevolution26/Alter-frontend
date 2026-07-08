@@ -6,7 +6,7 @@ import "server-only";
 // The real package is imported for side-effects above; skip a declaration here
 // to avoid "invalid module name" augmentation issues in some TS configs.
 import { getSessionToken } from "@/lib/session";
-import type { ApiErrorBody, User } from "@/lib/types";
+import type { ApiErrorBody, User, PrayerRequest, Testimony } from "@/lib/types";
 
 const API_BASE_URL = process.env.API_BASE_URL ?? "http://localhost:8000/api/v1";
 
@@ -113,4 +113,29 @@ export async function getCurrentUser(): Promise<User | null> {
   } catch {
     return null;
   }
+}
+
+export async function listPublicPrayers(
+  skip: number = 0,
+  limit: number = 50,
+  organizationId?: string
+): Promise<PrayerRequest[]> {
+  const params = new URLSearchParams();
+  params.set("skip", skip.toString());
+  params.set("limit", limit.toString());
+  if (organizationId) {
+    params.set("organization_id", organizationId);
+  }
+  return apiFetch<PrayerRequest[]>(`/prayers?${params.toString()}`, { authenticated: false });
+}
+
+
+export async function listPublishedTestimonies(
+  skip = 0,
+  limit = 50
+): Promise<Testimony[]> {
+  const params = new URLSearchParams({ skip: String(skip), limit: String(limit) });
+  return apiFetch<Testimony[]>(`/testimonies?${params.toString()}`, {
+    authenticated: false,
+  });
 }

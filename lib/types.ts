@@ -17,6 +17,7 @@ export interface User {
 
 export type PrayerVisibility = "public" | "organization" | "anonymous";
 export type PrayerStatus = "pending_review" | "published" | "escalated" | "archived" | "removed";
+export type PrayerRiskFlag = "none" | "review" | "crisis";
 
 export interface PrayerRequest {
   id: string;
@@ -28,6 +29,10 @@ export interface PrayerRequest {
   created_at: string;
   user_id: string | null;
   organization_id: string | null;
+}
+
+export interface PrayerRequestModeration extends PrayerRequest {
+  risk_flag: PrayerRiskFlag;
 }
 
 export type TestimonyStatus = "pending_review" | "verified" | "published" | "rejected";
@@ -95,4 +100,18 @@ export interface MpesaStkPushResponse {
 /** Shape FastAPI returns for both validation (422) and plain HTTPException errors. */
 export interface ApiErrorBody {
   detail?: string | { msg: string; loc: (string | number)[] }[];
+}
+
+
+// --- Moderation (staff-only) --------------------------------------------
+export type ContentType = "prayer_request" | "testimony" | "event" | "user";
+export type ReportStatus = "open" | "in_review" | "resolved" | "escalated";
+
+export interface ModerationReport {
+  id: string;
+  content_type: ContentType;
+  content_id: string;
+  reason: string;
+  status: ReportStatus;
+  created_at: string;
 }

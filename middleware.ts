@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PROTECTED_PREFIXES = ["/prayers/new", "/testimonies/new"];
+const PROTECTED_PREFIXES = ["/prayers/new", "/testimonies/new", "/admin"];
 
 export function middleware(request: NextRequest) {
   const isProtected = PROTECTED_PREFIXES.some((prefix) => request.nextUrl.pathname.startsWith(prefix));
@@ -18,5 +18,9 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/prayers/new", "/testimonies/new"],
+  // Cookie-presence check only — this is a fast-path redirect for the
+  // logged-out case. The actual role check (moderator/admin/field_staff)
+  // happens server-side in app/admin/layout.tsx and, authoritatively, on
+  // the backend itself via `require_roles(...)` on every write.
+  matcher: ["/prayers/new", "/testimonies/new", "/admin/:path*"],
 };

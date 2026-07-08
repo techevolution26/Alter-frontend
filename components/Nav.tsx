@@ -32,6 +32,15 @@ export default function Nav({ user }: { user: User | null }) {
 
           <span className="mx-1 h-5 w-px bg-white/10" aria-hidden="true" />
 
+          {user && ["moderator", "field_staff", "admin"].includes(user.role) && (
+            <Link
+              href="/admin"
+              className="rounded-full px-3 py-2 text-linen/80 transition hover:bg-white/5 hover:text-linen"
+            >
+              Staff
+            </Link>
+          )}
+
           {user ? (
             <>
               <span className="hidden px-2 text-linen/60 sm:inline">Hi, {user.full_name.split(" ")[0]}</span>

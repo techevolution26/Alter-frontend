@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { apiFetch } from "@/lib/api";
+import { listPublicPrayers } from "@/lib/api";
 import PrayerCard from "@/components/PrayerCard";
 import type { PrayerRequest } from "@/lib/types";
 
 export default async function HomePage() {
-  const prayers = await apiFetch<PrayerRequest[]>("/prayers?limit=50", { authenticated: false });
+  const prayers = await listPublicPrayers(0, 50);
   const totalPrayedFor = prayers.reduce((sum, p) => sum + p.prayer_count, 0);
 
   return (
