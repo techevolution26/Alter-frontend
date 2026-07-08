@@ -37,15 +37,19 @@ export interface PrayerRequestModeration extends PrayerRequest {
 
 export type TestimonyStatus = "pending_review" | "verified" | "published" | "rejected";
 
-export interface Testimony {
+export type Testimony = {
   id: string;
   title: string;
   content: string;
-  status: TestimonyStatus;
-  user_id: string;
-  organization_id: string | null;
+  status: string;
   created_at: string;
-}
+  prayer_id?: string | null;
+  prayer?: {
+    id: string;
+    content: string;
+    category?: string | null;
+  } | null;
+};
 
 export interface AlterEvent {
   id: string;

@@ -5,7 +5,9 @@ import { submitTestimonyAction } from "@/lib/actions";
 import SubmitButton from "@/components/SubmitButton";
 import FormMessage from "@/components/FormMessage";
 
-export default function TestimonyForm() {
+type Prayer = { id: string | number; category?: string | null; content: string };
+
+export default function TestimonyForm({ prayers = [] }: { prayers?: Prayer[] }) {
   const [state, formAction] = useFormState(submitTestimonyAction, {});
 
   return (
@@ -24,6 +26,16 @@ export default function TestimonyForm() {
           placeholder="e.g. Provision for rent, right on time"
         />
       </div>
+
+      <select name="prayer_id" required className="field-input">
+        <option value="">Select a related prayer</option>
+        {prayers.map((prayer) => (
+          <option key={prayer.id} value={prayer.id}>
+            {prayer.category ? `${prayer.category} — ` : ""}
+            {prayer.content.slice(0, 60)}
+          </option>
+        ))}
+      </select>
 
       <div>
         <label htmlFor="content" className="field-label">

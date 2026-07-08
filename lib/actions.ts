@@ -124,15 +124,23 @@ export async function prayForRequestAction(formData: FormData): Promise<void> {
 
 // --- Testimonies ------------------------------------------------------------
 
-export async function submitTestimonyAction(_prevState: ActionState, formData: FormData): Promise<ActionState> {
+export async function submitTestimonyAction(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
   const title = String(formData.get("title") ?? "").trim();
   const content = String(formData.get("content") ?? "").trim();
+  const prayerId = String(formData.get("prayer_id") ?? "").trim();
 
   if (!title) return { error: "Give your testimony a short title." };
   if (content.length < 10) return { error: "Tell us a bit more about what happened." };
+  if (!prayerId) return { error: "Choose the prayer this testimony relates to." };
 
   try {
-    await apiFetch("/testimonies", { method: "POST", body: { title, content } });
+    await apiFetch("/testimonies", {
+      method: "POST",
+      body: { title, content, prayer_id: prayerId },
+    });
   } catch (err) {
     return { error: errorMessage(err) };
   }
