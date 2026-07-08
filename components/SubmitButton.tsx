@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import { useFormStatus } from "react-dom";
+import { useGlobalLoader } from "@/components/GlobalLoaderProvider";
 
 export default function SubmitButton({
   children,
@@ -12,6 +14,19 @@ export default function SubmitButton({
   variant?: "primary" | "secondary";
 }) {
   const { pending } = useFormStatus();
+  const { startLoading, stopLoading } = useGlobalLoader();
+
+  useEffect(() => {
+    if (pending) {
+      startLoading();
+    } else {
+      stopLoading();
+    }
+
+    return () => {
+      stopLoading();
+    };
+  }, [pending, startLoading, stopLoading]);
 
   return (
     <button
