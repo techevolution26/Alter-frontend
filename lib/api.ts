@@ -1,5 +1,3 @@
-// Suppress TS error when type declarations for the side-effect import are missing
-// @ts-ignore
 import "server-only";
 
 // Provide a minimal ambient declaration for environments lacking the module's types
@@ -123,10 +121,27 @@ export async function listPublicPrayers(
   const params = new URLSearchParams();
   params.set("skip", skip.toString());
   params.set("limit", limit.toString());
-  if (organizationId) {
-    params.set("organization_id", organizationId);
+  params.set("status", "published");
+
+  const currentUser = await getCurrentUser();
+  const activeOrganizationId = organizationId ?? currentUser?.organization_id ?? null;
+
+  if (activeOrganizationId) {
+    params.set("organization_id", activeOrganizationId);
   }
-  return apiFetch<PrayerRequest[]>(`/prayers?${params.toString()}`, { authenticated: false });
+
+  const prayers = await apiFetch<PrayerRequest[]>(`/prayers?${params.toString()}`, {
+    authenticated: false,
+  });
+
+  return prayers.filter((prayer) => {
+    if (prayer.status !== "published") return false;
+    if (prayer.visibility === "public") return true;
+    if (prayer.visibility === "organization") {
+      return Boolean(activeOrganizationId && prayer.organization_id === activeOrganizationId);
+    }
+    return false;
+  });
 }
 
 
