@@ -5,6 +5,7 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import { GlobalLoaderProvider } from "@/components/GlobalLoaderProvider";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/react";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -45,6 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main className="flex-1">{children}</main>
           <Footer />
         </GlobalLoaderProvider>
+        <Analytics />
       </body>
     </html>
   );
