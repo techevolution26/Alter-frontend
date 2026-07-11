@@ -78,6 +78,15 @@ export default function Nav({ user }: { user: User | null }) {
         </Link>
       )}
 
+      {user && user.role === "super_admin" && (
+        <Link
+          href="/platform"
+          className="rounded-full px-3 py-2 text-linen/80 transition hover:bg-white/5 hover:text-linen"
+        >
+          Platform
+        </Link>
+      )}
+
       {user ? (
         <>
           {!mobile && <span className="hidden px-2 text-linen/60 sm:inline">Hi, {user.full_name.split(" ")[0]}</span>}

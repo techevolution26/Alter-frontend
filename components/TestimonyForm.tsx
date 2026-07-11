@@ -4,14 +4,31 @@ import { useFormState } from "react-dom";
 import { submitTestimonyAction } from "@/lib/actions";
 import SubmitButton from "@/components/SubmitButton";
 import FormMessage from "@/components/FormMessage";
+import type { PrayerRequestAttachable } from "@/lib/types";
 
-type Prayer = { id: string | number; category?: string | null; content: string };
-
-export default function TestimonyForm({ prayers = [] }: { prayers?: Prayer[] }) {
+export default function TestimonyForm({
+  eligiblePrayers,
+}: {
+  eligiblePrayers: PrayerRequestAttachable[];
+}) {
   const [state, formAction] = useFormState(submitTestimonyAction, {});
 
   return (
     <form action={formAction} className="space-y-5">
+      <div>
+        <label htmlFor="prayer_id" className="field-label">
+          Which prayer request is this about?
+        </label>
+        <select id="prayer_id" name="prayer_id" required className="field-input">
+          <option value="">Select one...</option>
+          {eligiblePrayers.map((prayer) => (
+            <option key={prayer.id} value={prayer.id}>
+              {prayer.content.length > 80 ? `${prayer.content.slice(0, 80)}...` : prayer.content}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <div>
         <label htmlFor="title" className="field-label">
           Give it a short title
@@ -26,16 +43,6 @@ export default function TestimonyForm({ prayers = [] }: { prayers?: Prayer[] }) 
           placeholder="e.g. Provision for rent, right on time"
         />
       </div>
-
-      <select name="prayer_id" required className="field-input">
-        <option value="">Select a related prayer</option>
-        {prayers.map((prayer) => (
-          <option key={prayer.id} value={prayer.id}>
-            {prayer.category ? `${prayer.category} — ` : ""}
-            {prayer.content.slice(0, 60)}
-          </option>
-        ))}
-      </select>
 
       <div>
         <label htmlFor="content" className="field-label">

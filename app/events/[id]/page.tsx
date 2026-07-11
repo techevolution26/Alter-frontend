@@ -1,17 +1,19 @@
 import { notFound } from "next/navigation";
 import { apiFetch, getCurrentUser, ApiError } from "@/lib/api";
 import RSVPButtons from "@/components/RSVPButtons";
-import { formatEventTime } from "@/lib/format";
+import { formatEventTime, isValidUuid } from "@/lib/format";
 import type { AlterEvent } from "@/lib/types";
 
 export default async function EventDetailPage({ params }: { params: { id: string } }) {
+  if (!isValidUuid(params.id)) notFound();
+
   const user = await getCurrentUser();
 
   let event: AlterEvent;
   try {
     event = await apiFetch<AlterEvent>(`/events/${params.id}`, { authenticated: false });
   } catch (err) {
-    if (err instanceof ApiError && err.status === 404) notFound();
+    if (err instanceof ApiError && (err.status === 404 || err.status === 422)) notFound();
     throw err;
   }
 

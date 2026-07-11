@@ -2,7 +2,7 @@
 // rather than codegen'd for now — see README for upgrading to a generated
 // client once the API stabilizes.
 
-export type UserRole = "member" | "field_staff" | "moderator" | "admin";
+export type UserRole = "member" | "field_staff" | "moderator" | "admin" | "super_admin";
 
 export interface User {
   id: string;
@@ -17,7 +17,7 @@ export interface User {
 
 export type PrayerVisibility = "public" | "organization" | "anonymous";
 export type PrayerStatus = "pending_review" | "published" | "escalated" | "archived" | "removed";
-export type PrayerRiskFlag = "none" | "review" | "crisis";
+export type RiskFlag = "none" | "review" | "crisis";
 
 export interface PrayerRequest {
   id: string;
@@ -31,25 +31,22 @@ export interface PrayerRequest {
   organization_id: string | null;
 }
 
+/** Only returned from staff-only endpoints (the moderation queue). */
 export interface PrayerRequestModeration extends PrayerRequest {
-  risk_flag: PrayerRiskFlag;
+  risk_flag: RiskFlag;
 }
 
 export type TestimonyStatus = "pending_review" | "verified" | "published" | "rejected";
 
-export type Testimony = {
+export interface Testimony {
   id: string;
   title: string;
   content: string;
-  status: string;
+  status: TestimonyStatus;
+  user_id: string;
+  organization_id: string | null;
   created_at: string;
-  prayer_id?: string | null;
-  prayer?: {
-    id: string;
-    content: string;
-    category?: string | null;
-  } | null;
-};
+}
 
 export interface AlterEvent {
   id: string;
@@ -59,7 +56,8 @@ export interface AlterEvent {
   start_time: string;
   end_time: string | null;
   is_recurring: boolean;
-  organization_id: string;
+  organization_id: string | null;
+  is_global: boolean;
 }
 
 export type RSVPStatus = "going" | "interested" | "cancelled";
@@ -79,6 +77,12 @@ export interface Organization {
   contact_email: string | null;
   contact_phone: string | null;
   is_verified_partner: boolean;
+}
+
+/** Super-admin-only view — GET /platform/organizations. */
+export interface OrganizationOverview extends Organization {
+  member_count: number;
+  admin_count: number;
 }
 
 export type PaymentPurpose = "general_fund" | "program" | "event";
@@ -106,8 +110,39 @@ export interface ApiErrorBody {
   detail?: string | { msg: string; loc: (string | number)[] }[];
 }
 
+// --- Programs & fund allocation (super-admin writes, public reads) --------
+
+export type ProgramStatus = "active" | "paused" | "completed" | "cancelled";
+
+export interface Program {
+  id: string;
+  name: string;
+  description: string;
+  organization_id: string | null;
+  target_amount: string | null;
+  status: ProgramStatus;
+  created_by_id: string;
+  created_at: string;
+}
+
+/** The actual transparency-page shape — GET /programs and GET /programs/{id}. */
+export interface ProgramWithStats extends Program {
+  total_raised: string;
+  total_allocated: string;
+  balance: string;
+}
+
+export interface Allocation {
+  id: string;
+  program_id: string;
+  amount: string;
+  description: string;
+  allocated_by_id: string;
+  created_at: string;
+}
 
 // --- Moderation (staff-only) --------------------------------------------
+
 export type ContentType = "prayer_request" | "testimony" | "event" | "user";
 export type ReportStatus = "open" | "in_review" | "resolved" | "escalated";
 
@@ -117,5 +152,18 @@ export interface ModerationReport {
   content_id: string;
   reason: string;
   status: ReportStatus;
+  created_at: string;
+}
+
+/**
+ * GET /prayers/eligible-for-testimony — the current user's own published,
+ * publicly-visible prayers that a testimony can be attached to.
+ */
+export interface PrayerRequestAttachable {
+  id: string;
+  content: string;
+  category: string | null;
+  visibility: string;
+  status: string;
   created_at: string;
 }

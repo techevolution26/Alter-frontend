@@ -40,3 +40,16 @@ export function formatKes(amount: string | number): string {
     value
   );
 }
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Guards a dynamic [id] route param before it ever reaches the API.
+ * Catching HTTPException(404) alone isn't enough — a malformed UUID in the
+ * path gets rejected by FastAPI's own validation as a 422, not a 404, so
+ * relying only on status-code matching lets things like a stray "/new"
+ * (from a stale route match) crash instead of rendering a clean 404.
+ */
+export function isValidUuid(value: string): boolean {
+  return UUID_PATTERN.test(value);
+}

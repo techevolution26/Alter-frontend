@@ -8,9 +8,11 @@ import type {
   MpesaStkPushResponse,
   PrayerStatus,
   PrayerVisibility,
+  ProgramStatus,
   ReportStatus,
   RSVPStatus,
   TestimonyStatus,
+  User,
 } from "@/lib/types";
 
 export interface ActionState {
@@ -274,6 +276,183 @@ export async function createEventAction(_prevState: ActionState, formData: FormD
         // datetime-local inputs have no timezone — treat as the server's
         // local time by sending as-is; for a real pilot this should be
         // adjusted to the org's actual timezone rather than assumed.
+        start_time: new Date(start_time).toISOString(),
+        end_time: end_time ? new Date(end_time).toISOString() : null,
+      },
+    });
+  } catch (err) {
+    return { error: errorMessage(err) };
+  }
+
+  revalidatePath("/events");
+  redirect("/events");
+}
+
+// --- Platform / super-admin (strictly separate from moderator/admin) -------
+// Organizations & role assignment, programs & fund allocation, global events.
+
+export async function createOrganizationAction(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const name = String(formData.get("name") ?? "").trim();
+  const type = String(formData.get("type") ?? "church");
+  const region = String(formData.get("region") ?? "").trim();
+  const contact_email = String(formData.get("contact_email") ?? "").trim();
+  const contact_phone = String(formData.get("contact_phone") ?? "").trim();
+
+  if (!name || !region) {
+    return { error: "Name and region are required." };
+  }
+
+  try {
+    await apiFetch("/organizations", {
+      method: "POST",
+      body: {
+        name,
+        type,
+        region,
+        contact_email: contact_email || null,
+        contact_phone: contact_phone || null,
+      },
+    });
+  } catch (err) {
+    return { error: errorMessage(err) };
+  }
+
+  revalidatePath("/platform/organizations");
+  redirect("/platform/organizations");
+}
+
+/**
+ * Looks the person up by email/phone, then assigns the role in one step —
+ * a raw user_id field would be unusable, nobody has UUIDs memorized.
+ */
+export async function assignRoleByIdentifierAction(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const identifier = String(formData.get("identifier") ?? "").trim();
+  const role = String(formData.get("role") ?? "");
+  const organization_id = String(formData.get("organization_id") ?? "").trim();
+
+  if (!identifier || !role) {
+    return { error: "Enter the person's email or phone number and choose a role." };
+  }
+
+  try {
+    const user = await apiFetch<User>(
+      `/platform/users/lookup?identifier=${encodeURIComponent(identifier)}`
+    );
+    const updated = await apiFetch<User>("/platform/role-assignments", {
+      method: "POST",
+      body: { user_id: user.id, role, organization_id: organization_id || null },
+    });
+    return { success: `${updated.full_name} is now ${updated.role.replace("_", " ")}.` };
+  } catch (err) {
+    return { error: errorMessage(err) };
+  }
+}
+
+export async function createProgramAction(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const name = String(formData.get("name") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const organization_id = String(formData.get("organization_id") ?? "").trim();
+  const target_amount = String(formData.get("target_amount") ?? "").trim();
+
+  if (!name || !description) {
+    return { error: "Name and description are required." };
+  }
+
+  try {
+    await apiFetch("/programs", {
+      method: "POST",
+      body: {
+        name,
+        description,
+        organization_id: organization_id || null,
+        target_amount: target_amount || null,
+      },
+    });
+  } catch (err) {
+    return { error: errorMessage(err) };
+  }
+
+  revalidatePath("/platform/programs");
+  redirect("/platform/programs");
+}
+
+export async function updateProgramStatusAction(
+  programId: string,
+  status: ProgramStatus
+): Promise<ActionState> {
+  try {
+    await apiFetch(`/programs/${programId}`, { method: "PATCH", body: { status } });
+  } catch (err) {
+    return { error: errorMessage(err) };
+  }
+  revalidatePath(`/platform/programs/${programId}`);
+  revalidatePath("/platform/programs");
+  return { success: "Status updated." };
+}
+
+/**
+ * Bind the programId first: `recordAllocationAction.bind(null, programId)`
+ * gives useFormState the (prevState, formData) signature it expects.
+ */
+export async function recordAllocationAction(
+  programId: string,
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const amount = String(formData.get("amount") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+
+  if (!amount || !description) {
+    return { error: "Amount and a description are required." };
+  }
+
+  try {
+    await apiFetch(`/programs/${programId}/allocations`, {
+      method: "POST",
+      body: { amount, description },
+    });
+  } catch (err) {
+    return { error: errorMessage(err) };
+  }
+
+  revalidatePath(`/platform/programs/${programId}`);
+  return { success: "Allocation recorded." };
+}
+
+/** Platform-wide event — organization_id is always omitted. Field
+ * staff/admin org events still go through createEventAction above; this
+ * is the super-admin-only counterpart. */
+export async function createGlobalEventAction(
+  _prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const title = String(formData.get("title") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const location = String(formData.get("location") ?? "").trim();
+  const start_time = String(formData.get("start_time") ?? "");
+  const end_time = String(formData.get("end_time") ?? "");
+
+  if (!title || !start_time) {
+    return { error: "Title and a start time are required." };
+  }
+
+  try {
+    await apiFetch("/events", {
+      method: "POST",
+      body: {
+        title,
+        description: description || null,
+        location: location || null,
+        organization_id: null,
         start_time: new Date(start_time).toISOString(),
         end_time: end_time ? new Date(end_time).toISOString() : null,
       },
