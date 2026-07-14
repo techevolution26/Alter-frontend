@@ -67,6 +67,15 @@ export default function Nav({ user }: { user: User | null }) {
         Give
       </Link>
 
+      <Link
+        href="/impact"
+        onClick={() => handleNavigationStart("/impact")}
+        aria-current={isActive("/impact") ? "page" : undefined}
+        className={linkClassName("/impact")}
+      >
+        Impact
+      </Link>
+
       {user && ["moderator", "field_staff", "admin"].includes(user.role) && (
         <Link
           href="/admin"
@@ -81,7 +90,9 @@ export default function Nav({ user }: { user: User | null }) {
       {user && user.role === "super_admin" && (
         <Link
           href="/platform"
-          className="rounded-full px-3 py-2 text-linen/80 transition hover:bg-white/5 hover:text-linen"
+          onClick={() => handleNavigationStart("/platform")}
+          aria-current={isActive("/platform") ? "page" : undefined}
+          className={linkClassName("/platform")}
         >
           Platform
         </Link>

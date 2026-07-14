@@ -171,8 +171,7 @@ export async function initiateDonationAction(
 ): Promise<ActionState> {
   const phone_number = String(formData.get("phone_number") ?? "").trim();
   const amount = String(formData.get("amount") ?? "").trim();
-  const purpose = String(formData.get("purpose") ?? "general_fund");
-  const purpose_reference = String(formData.get("purpose_reference") ?? "").trim();
+  const program_id = String(formData.get("program_id") ?? "").trim();
 
   if (!phone_number || !amount) {
     return { error: "Enter the M-Pesa phone number and an amount." };
@@ -186,8 +185,11 @@ export async function initiateDonationAction(
       body: {
         phone_number,
         amount,
-        purpose,
-        purpose_reference: purpose_reference || null,
+        // program_id is the real structured link (see app/models/program.py) —
+        // purpose is derived from whether one was picked, not a separate
+        // field the donor fills in, so the two can never disagree.
+        purpose: program_id ? "program" : "general_fund",
+        program_id: program_id || null,
       },
     });
     return { success: result.customer_message };

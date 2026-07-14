@@ -18,7 +18,7 @@ export default async function NewTestimonyPage() {
       {eligiblePrayers.length === 0 ? (
         <div className="mt-8 rounded-card border border-dashed border-vigil/20 px-6 py-10 text-center">
           <p className="text-ink/70">
-            Testimonies connect back to a prayer request you shared publicly or anonymously that's
+            Testimonies connects back to a prayer request you shared publicly or anonymously that's
             since been published.
           </p>
           <p className="mt-2 text-sm text-ink/50">
