@@ -46,6 +46,7 @@ export interface Testimony {
   user_id: string;
   organization_id: string | null;
   created_at: string;
+  prayer?: PrayerRequestAttachable | null;
 }
 
 export interface AlterEvent {
