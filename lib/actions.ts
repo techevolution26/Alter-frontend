@@ -412,15 +412,28 @@ export async function recordAllocationAction(
 ): Promise<ActionState> {
   const amount = String(formData.get("amount") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
+  const allow_overdraw = formData.get("allow_overdraw") === "on";
+  const justification = String(formData.get("justification") ?? "").trim();
 
   if (!amount || !description) {
     return { error: "Amount and a description are required." };
+  }
+  if (allow_overdraw && !justification) {
+    return {
+      error:
+        "A justification is required to record an allocation that exceeds the available balance.",
+    };
   }
 
   try {
     await apiFetch(`/programs/${programId}/allocations`, {
       method: "POST",
-      body: { amount, description },
+      body: {
+        amount,
+        description,
+        allow_overdraw,
+        justification: justification || null,
+      },
     });
   } catch (err) {
     return { error: errorMessage(err) };
@@ -465,4 +478,29 @@ export async function createGlobalEventAction(
 
   revalidatePath("/events");
   redirect("/events");
+}
+
+
+/** Corrects a prior disbursement via a linked reversal entry — never edits
+ * or deletes the original row. See app/services/ledger.py. */
+export async function reverseAllocationAction(
+  programId: string,
+  allocationId: string,
+  reason: string
+): Promise<ActionState> {
+  if (!reason.trim()) {
+    return { error: "A reason is required to reverse an allocation." };
+  }
+
+  try {
+    await apiFetch(`/programs/${programId}/allocations/${allocationId}/reverse`, {
+      method: "POST",
+      body: { reason },
+    });
+  } catch (err) {
+    return { error: errorMessage(err) };
+  }
+
+  revalidatePath(`/platform/programs/${programId}`);
+  return { success: "Allocation reversed." };
 }

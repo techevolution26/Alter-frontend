@@ -141,6 +141,21 @@ export interface Allocation {
   created_at: string;
 }
 
+export type AllocationKind = "disbursement" | "reversal";
+
+export interface Allocation {
+  id: string;
+  program_id: string;
+  amount: string;
+  description: string;
+  allocated_by_id: string;
+  kind: AllocationKind;
+  reverses_allocation_id: string | null;
+  exceeded_balance_at_time: boolean;
+  justification: string | null;
+  created_at: string;
+}
+
 // --- Moderation (staff-only) --------------------------------------------
 
 export type ContentType = "prayer_request" | "testimony" | "event" | "user";

@@ -20,6 +20,11 @@ export default async function ProgramDetailPage({ params }: { params: { id: stri
     const allocations = await apiFetch<Allocation[]>(`/programs/${params.id}/allocations?limit=100`, {
         authenticated: false,
     });
+    const reversedIds = new Set(
+        allocations
+            .filter((a) => a.reverses_allocation_id)
+            .map((a) => a.reverses_allocation_id as string)
+    );
 
     const balance = parseFloat(program.balance);
 
@@ -71,7 +76,15 @@ export default async function ProgramDetailPage({ params }: { params: { id: stri
                         {allocations.length === 0 ? (
                             <p className="py-6 text-sm text-ink/50">Nothing allocated yet.</p>
                         ) : (
-                            allocations.map((a) => <AllocationItem key={a.id} allocation={a} />)
+                            allocations.map((a) => (
+                                <AllocationItem
+                                    key={a.id}
+                                    allocation={a}
+                                    isReversed={reversedIds.has(a.id)}
+                                    programId={program.id}
+                                    showActions
+                                />
+                            ))
                         )}
                     </div>
                 </div>
